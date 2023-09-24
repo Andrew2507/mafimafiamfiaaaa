@@ -1,0 +1,153 @@
+import random
+import time
+from sys import exit
+import tkinter
+import pyttsx3
+
+def say(message):
+    tts = pyttsx3.init()
+    tts.setProperty('voice','ru')
+    tts.say(message)
+    tts.runAndWait()
+
+def аef (dictionary):
+    a=[]
+    for i in dictionary:
+        if i in dictionary.keys():
+            a.append(i)
+    print (a)
+
+def registration():
+    number_of_players=int(input("Сколько у вас игроков? "))
+    players_list=[]
+    for n in range(number_of_players):
+        nick = input("Введите имя пользователя ")
+        #nicknames must be unique
+        players_list.append(nick)
+        while players_list.count(nick) != True:
+            print ('Есть одинаковые никнеймы')
+            players_list.pop(len(players_list)-1)
+            print ('Попробуйте заново')
+            nick = input("Введите имя пользователя ")
+            players_list.append(nick)
+    return players_list
+
+def roles_for_players(number_of_players):
+    if number_of_players<=3:
+        print("Слишком мало игроков")
+        return None
+    mafia = number_of_players//4
+    civilian = number_of_players - mafia
+    return mafia, civilian
+
+def character_random_distribution(players_list):#players_list - список имён игроков
+    mafia, civilian = roles_for_players(len(players_list))
+    roles_list = list()
+    for i in range(mafia):
+        roles_list.append("mafia")
+    for i in range(civilian):
+        roles_list.append("civilian")
+    random.shuffle(roles_list)
+    dictionary = {}
+    for i in range(len(players_list)):
+        dictionary[players_list[i]]=roles_list[i]
+    return dictionary
+
+def quality_of_max(array):
+    max1 = array[0]
+    quality=0
+    for i in range(len(array)):
+        if max1<array[i]:
+            max1=array[i]
+            quality=0
+        if max1==array[i]:
+            quality+=1
+    return quality
+
+def stop(roles):
+    if roles.count('mafia') == 0:
+        say('Мирные победили')
+        exit()
+    if roles.count("civilian")<=roles.count("mafia"):
+        say ('Мафия победила!')
+        exit()
+
+def kill(dictionary, killed_player):#killed_player - никнейм игрока, который убит
+    stop(list(dictionary.values()))
+    dictionary.pop(killed_player)
+    say("Убит игрок {}".format(killed_player))
+    stop(list(dictionary.values()))
+    return dictionary
+
+def  votes_results(dictionary, dictionary_votes):
+    for values in dictionary:
+        if values == 'civilian' or 'sheriff' or 'hiller':
+            pass
+        else:
+            array_DK = dictionary.pop(dictionary[keys])
+            
+def discussion(dictionary):
+    players_list=list(dictionary.keys())
+    candidates=dict()
+    for nick in players_list:
+        candidates[nick] = 0
+    print(candidates)
+    for n in range(len(players_list)):
+        nick = input("Введите имя пользователя ")
+        if nick in candidates:
+            candidates[nick] += 1
+    if quality_of_max(list(candidates.values())) == 1:
+        for key in candidates:
+            if candidates[key]==max(candidates.values()):
+                kill(dictionary,key)
+
+def discussion_timer(seconds_left = 60): 
+    while seconds_left:
+        say("Осталось {} секунд".format(seconds_left))
+        seconds_left -= 20
+        time.sleep(20)
+
+        
+def open_window(my_text):
+    window = tkinter.Tk()
+    window.geometry('300x150')
+    lbl = tkinter.Label(window, text=my_text, font=("Arial Bold", 20))
+    lbl.grid(column=0, row=0)
+    btn = tkinter.Button(window, text="Quit", command=window.destroy, height = 1, width = 3)
+    btn.place(x=260, y=110)
+    window.mainloop()
+    time.sleep(3)
+    window.quit()
+
+
+def roles_announsment (dictionary):
+    for key in dictionary:
+        say("Игрок {}, подойдите сюда".format(key))
+        if dictionary[key] == 'civilian':
+            open_window('МИРНЫЙ')
+        else:
+            if list(dictionary.values()).count('mafia')==1:
+                open_window('МАФИЯ')
+            else:
+                q = []
+                for keys in dictionary:
+                    if dictionary[keys] == 'mafia':
+                        q.append(keys)
+                open_window('Список мафий: {}'.format(', '.join(q)))
+        time.sleep(3)
+
+
+players_list = registration()
+dictionary = character_random_distribution(players_list)
+roles_announsment(dictionary)
+while True:
+    say("Город засыпает")
+    say("Просыпается мафия")
+    for i in range (len(players_list)):
+        killed_player = input("Кого вы хотите убить?")
+    kill(dictionary, killed_player)
+    say("Город просыпается без {}".format(killed_player))
+    say("Старт дискуссии")
+    discussion_timer(20  * len(dictionary)) ##TEST = 1
+    say("Старт голосования")
+    discussion(dictionary)
